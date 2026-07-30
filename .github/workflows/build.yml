@@ -26,16 +26,18 @@ jobs:
         run: |
           python -m nuitka `
             --standalone `
-            --windows-disable-console `
+            --windows-console-mode=disable `
             --enable-plugin=tk-inter `
             --include-data-dir=assets=assets `
             --output-filename=MineSweeper `
+            --assume-yes-for-downloads `
             MineSweeper.py
 
       - uses: actions/upload-artifact@v4
         with:
           name: MineSweeper-Windows
           path: MineSweeper.exe
+
 
   build-macos:
     runs-on: macos-latest
