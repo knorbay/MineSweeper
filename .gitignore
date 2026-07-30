@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Nuitka
+*.app
+*.build/
+*.dist/
+*.spec
+
+# Icons
+*.iconset
