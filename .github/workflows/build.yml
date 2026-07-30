@@ -22,17 +22,7 @@ jobs:
           pip install nuitka customtkinter pillow pygame imageio
 
       - name: Build EXE
-        shell: cmd
-        run: |
-            python -m nuitka ^
-            --standalone ^
-            --onefile ^
-            --windows-console-mode=disable ^
-            --enable-plugin=tk-inter ^
-            --include-data-dir=assets=assets ^
-            --output-filename=MineSweeper ^
-            MineSweeper.py
-
+        run: python -m nuitka --standalone --onefile --windows-console-mode=disable --enable-plugin=tk-inter --include-data-dir=assets=assets --output-filename=MineSweeper MineSweeper.py
       - uses: actions/upload-artifact@v4
         with:
           name: MineSweeper-Windows
