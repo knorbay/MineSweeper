@@ -1,3 +1,4 @@
+```yaml
 name: Build MineSweeper
 
 on:
@@ -14,12 +15,12 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install nuitka customtkinter pillow pygame imageio
+          pip install nuitka ordered-set zstandard customtkinter pillow pygame imageio
 
       - name: Build EXE
         shell: pwsh
@@ -29,15 +30,20 @@ jobs:
             --windows-console-mode=disable `
             --enable-plugin=tk-inter `
             --include-data-dir=assets=assets `
+            --include-data-files=highscores.json=highscores.json `
             --output-filename=MineSweeper `
             --assume-yes-for-downloads `
             MineSweeper.py
 
+      - name: Zip Windows Build
+        shell: pwsh
+        run: |
+          Compress-Archive -Path MineSweeper.dist\* -DestinationPath MineSweeper-Windows.zip
+
       - uses: actions/upload-artifact@v4
         with:
           name: MineSweeper-Windows
-          path: MineSweeper.exe
-
+          path: MineSweeper-Windows.zip
 
   build-macos:
     runs-on: macos-latest
@@ -47,12 +53,12 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip install nuitka customtkinter pillow pygame imageio
+          pip install nuitka ordered-set zstandard customtkinter pillow pygame imageio
 
       - name: Build APP
         run: |
@@ -62,10 +68,16 @@ jobs:
             --macos-app-icon=assets/icon.icns \
             --enable-plugin=tk-inter \
             --include-data-dir=assets=assets \
+            --include-data-files=highscores.json=highscores.json \
             --output-filename=MineSweeper \
             MineSweeper.py
+
+      - name: Zip macOS Build
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent MineSweeper.app MineSweeper-macOS.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: MineSweeper-macOS
-          path: MineSweeper.app
+          path: MineSweeper-macOS.zip
+```
