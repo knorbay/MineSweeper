@@ -34,16 +34,19 @@ jobs:
             --output-filename=MineSweeper `
             --assume-yes-for-downloads `
             MineSweeper.py
-
-      - name: Zip Windows Build
+      - name: Check output
         shell: pwsh
         run: |
-          Compress-Archive -Path MineSweeper.dist\* -DestinationPath MineSweeper-Windows.zip
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: MineSweeper-Windows
-          path: MineSweeper-Windows.zip
+          Get-ChildItem -Recurse -File | Select-Object FullName
+            - name: Zip Windows Build
+              shell: pwsh
+              run: |
+                Compress-Archive -Path MineSweeper.dist\* -DestinationPath MineSweeper-Windows.zip
+      
+            - uses: actions/upload-artifact@v4
+              with:
+                name: MineSweeper-Windows
+                path: MineSweeper-Windows.zip
 
   build-macos:
     runs-on: macos-latest
