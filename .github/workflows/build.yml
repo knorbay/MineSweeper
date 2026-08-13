@@ -8,7 +8,6 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +29,7 @@ jobs:
           python -m nuitka `
             --standalone `
             --windows-console-mode=disable `
+            --windows-icon-from-ico=assets/icon.ico `
             --enable-plugin=tk-inter `
             --include-data-dir=assets=assets `
             --include-data-files=highscores.json=highscores.json `
@@ -42,10 +42,8 @@ jobs:
         run: |
           Write-Host "=== Nuitka output ==="
           Get-ChildItem -Recurse -File | Select-Object FullName
-
           Write-Host ""
           Write-Host "=== Checking executable ==="
-
           if (Test-Path "MineSweeper.dist\MineSweeper.exe") {
             Write-Host "MineSweeper.exe found."
           }
@@ -67,9 +65,8 @@ jobs:
           name: MineSweeper-Windows
           path: MineSweeper-Windows.zip
 
-  build-macos:
-    runs-on: macos-latest
-
+  build-linux:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,23 +76,38 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install dependencies
+      - name: Install system dependencies
         shell: bash
         run: |
-          python3 -m pip install --upgrade pip
+          sudo apt-get update
+          sudo apt-get install -y \
+            patchelf \
+            fuse \
+            libfuse2 \
+            desktop-file-utils \
+            python3-tk \
+            tk-dev \
+            libsdl2-2.0-0 \
+            libsdl2-image-2.0-0 \
+            libsdl2-mixer-2.0-0 \
+            libsdl2-ttf-2.0-0
+
+      - name: Install python dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
           pip install nuitka ordered-set zstandard customtkinter pillow pygame-ce imageio
 
-      - name: Build APP
+      - name: Build binary
         shell: bash
         run: |
-          python3 -m nuitka \
+          python -m nuitka \
             --standalone \
-            --macos-create-app-bundle \
-            --macos-app-icon=assets/icon.icns \
             --enable-plugin=tk-inter \
             --include-data-dir=assets=assets \
             --include-data-files=highscores.json=highscores.json \
             --output-filename=MineSweeper \
+            --assume-yes-for-downloads \
             MineSweeper.py
 
       - name: Check output
@@ -103,30 +115,56 @@ jobs:
         run: |
           echo "=== Nuitka output ==="
           find . -maxdepth 3 -type f
-
           echo ""
-          echo "=== Checking application ==="
-
-          if [ -d "MineSweeper.app" ]; then
-            echo "MineSweeper.app found."
+          echo "=== Checking executable ==="
+          if [ -f "MineSweeper.dist/MineSweeper" ]; then
+            echo "MineSweeper found."
           else
-            echo "MineSweeper.app was not found."
+            echo "MineSweeper was not found in MineSweeper.dist."
             exit 1
           fi
 
-      - name: Zip macOS Build
+      - name: Build AppImage (tüm distrolarla uyumlu)
         shell: bash
         run: |
-          ditto \
-            -c \
-            -k \
-            --sequesterRsrc \
-            --keepParent \
-            MineSweeper.app \
-            MineSweeper-macOS.zip
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
 
-      - name: Upload macOS Build
+          APPDIR="MineSweeper.AppDir"
+          mkdir -p "$APPDIR/usr/bin"
+          cp -r MineSweeper.dist/* "$APPDIR/usr/bin/"
+
+          cat > "$APPDIR/MineSweeper.desktop" << 'EOF'
+          [Desktop Entry]
+          Name=MineSweeper
+          Exec=MineSweeper
+          Icon=icon
+          Type=Application
+          Categories=Game;
+          EOF
+
+          cp assets/icon.png "$APPDIR/icon.png"
+
+          cat > "$APPDIR/AppRun" << 'EOF'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          exec "$HERE/usr/bin/MineSweeper" "$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+
+          ./appimagetool-x86_64.AppImage "$APPDIR" MineSweeper-Linux-x86_64.AppImage
+
+      - name: Package Linux Build
+        shell: bash
+        run: |
+          mkdir -p dist_output
+          cp -r MineSweeper.dist dist_output/MineSweeper-standalone
+          cp MineSweeper-Linux-x86_64.AppImage dist_output/
+          cd dist_output
+          zip -r ../MineSweeper-Linux.zip .
+
+      - name: Upload Linux Build
         uses: actions/upload-artifact@v4
         with:
-          name: MineSweeper-macOS
-          path: MineSweeper-macOS.zip
+          name: MineSweeper-Linux
+          path: MineSweeper-Linux.zip
