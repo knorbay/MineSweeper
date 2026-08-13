@@ -42,7 +42,7 @@ python MineSweeper.py
 ## Downloads
 
 Pre-built releases are available in the **Releases** section.
-
+https://knorbay.itch.io/minesweeper
 ## Screenshots
 
 <img width="1182" height="883" alt="Ekran Resmi 2026-08-13 21 14 06" src="https://github.com/user-attachments/assets/a58b1fb6-fe53-4b58-94b4-506db18e8bd9" />
